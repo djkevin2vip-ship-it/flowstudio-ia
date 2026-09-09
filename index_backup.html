@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flow Studio</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header>
+  <h2>Flow Studio</h2>
+
+  <nav>
+    <a href="#">Início</a>
+    <a href="#">Projetos</a>
+    <a href="#">Músicas</a>
+    <a href="#">Sobre</a>
+  </nav>
+</header>
+
+<main>
+
+  <h1>Crie sua música</h1>
+  <p>Configure seu projeto para começar.</p>
+
+  <section class="studio-box">
+
+    <label>Nome da música</label>
+    <input id="nome" type="text" placeholder="Digite o nome da música">
+
+    <label>Artista</label>
+    <input id="artista" type="text" placeholder="Nome do artista">
+
+    <label>BPM</label>
+    <input id="bpm" type="number" placeholder="Ex: 140">
+
+    <label>Gênero</label>
+    <select id="genero">
+      <option>Trap</option>
+      <option>Rap</option>
+      <option>Funk</option>
+      <option>Rock</option>
+      <option>Forró</option>
+    </select>
+
+    <button onclick="criarProjeto()">Criar projeto</button>
+
+  </section>
+
+  <section class="studio-box">
+    <h2>🎵 Player de áudio</h2>
+
+    <input type="file" id="audioFile" accept=".mp3,.mp4,audio/mpeg,audio/mp4">
+
+    <audio id="player" controls></audio>
+  </section>
+
+  <section>
+    <h2>Meus projetos</h2>
+    <div id="listaProjetos"></div>
+  </section>
+
+</main>
+
+<script src="js/script.js"></script>
+
+</body>
+</html>

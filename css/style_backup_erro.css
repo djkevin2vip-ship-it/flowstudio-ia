@@ -1,0 +1,1157 @@
+/* =========================================================
+   FLOW STUDIO IA
+   SCRIPT.JS — PLAYER DE ÁUDIO
+   VERSÃO COMPLETA E ATUALIZADA
+========================================================= */
+
+let audioAtual = null;
+let playerAtual = null;
+let botaoAtual = null;
+let cardAtual = null;
+
+
+/* =========================================================
+   TOCAR MÚSICA
+========================================================= */
+
+function tocarMusica(arquivo, botao) {
+
+    if (!arquivo || !botao) {
+        return;
+    }
+
+    const card = botao.closest(".project-card");
+
+
+    /* -----------------------------------------------------
+       MESMA MÚSICA
+    ----------------------------------------------------- */
+
+    if (
+        audioAtual &&
+        audioAtual.src.includes(arquivo)
+    ) {
+
+        if (audioAtual.paused) {
+
+            audioAtual.play()
+                .then(() => {
+                    atualizarEstadoPlayer(true);
+                })
+                .catch(() => {
+                    mostrarMensagem(
+                        "Não foi possível reproduzir este áudio."
+                    );
+                });
+
+        } else {
+
+            audioAtual.pause();
+        }
+
+        return;
+    }
+
+
+    /* -----------------------------------------------------
+       PARA ÁUDIO ANTERIOR
+    ----------------------------------------------------- */
+
+    if (audioAtual) {
+
+        audioAtual.pause();
+        audioAtual.currentTime = 0;
+    }
+
+
+    /* -----------------------------------------------------
+       LIMPA ESTADOS DOS PROJETOS
+    ----------------------------------------------------- */
+
+    document
+        .querySelectorAll(".project-card")
+        .forEach(item => {
+
+            item.classList.remove("is-playing");
+
+        });
+
+
+    document
+        .querySelectorAll(".project-link")
+        .forEach(item => {
+
+            item.classList.remove("playing");
+            item.innerHTML = "▶ Ouvir projeto";
+
+        });
+
+
+    /* -----------------------------------------------------
+       NOVO ÁUDIO
+    ----------------------------------------------------- */
+
+    audioAtual = new Audio(arquivo);
+
+    audioAtual.preload = "metadata";
+    audioAtual.volume = 1;
+
+    botaoAtual = botao;
+    cardAtual = card;
+
+
+    /* -----------------------------------------------------
+       ESTADO VISUAL DO CARD
+    ----------------------------------------------------- */
+
+    botao.classList.add("playing");
+    botao.innerHTML = "❚❚ Pausar";
+
+    if (card) {
+        card.classList.add("is-playing");
+    }
+
+
+    /* -----------------------------------------------------
+       CRIA PLAYER
+    ----------------------------------------------------- */
+
+    criarPlayer(
+        arquivo,
+        botao,
+        card
+    );
+
+
+    /* -----------------------------------------------------
+       EVENTOS DO ÁUDIO
+    ----------------------------------------------------- */
+
+    audioAtual.addEventListener(
+        "loadedmetadata",
+        atualizarDuracao
+    );
+
+
+    audioAtual.addEventListener(
+        "timeupdate",
+        atualizarProgresso
+    );
+
+
+    audioAtual.addEventListener(
+        "play",
+        () => {
+            atualizarEstadoPlayer(true);
+        }
+    );
+
+
+    audioAtual.addEventListener(
+        "pause",
+        () => {
+            atualizarEstadoPlayer(false);
+        }
+    );
+
+
+    audioAtual.addEventListener(
+        "ended",
+        () => {
+            finalizarMusica();
+        }
+    );
+
+
+    audioAtual.addEventListener(
+        "error",
+        () => {
+
+            mostrarMensagem(
+                "Não foi possível carregar este áudio."
+            );
+
+            finalizarMusica();
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       INICIA
+    ----------------------------------------------------- */
+
+    audioAtual.play()
+        .then(() => {
+
+            atualizarEstadoPlayer(true);
+
+        })
+        .catch(() => {
+
+            mostrarMensagem(
+                "Não foi possível reproduzir este áudio."
+            );
+
+            atualizarEstadoPlayer(false);
+
+        });
+}
+
+
+/* =========================================================
+   CRIAR PLAYER
+========================================================= */
+
+function criarPlayer(
+    arquivo,
+    botao,
+    card
+) {
+
+    /* Remove player antigo */
+
+    if (playerAtual) {
+
+        playerAtual.remove();
+        playerAtual = null;
+    }
+
+
+    /* -----------------------------------------------------
+       NOME DA FAIXA
+    ----------------------------------------------------- */
+
+    let nomeMusica =
+        "Projeto Flow Studio IA";
+
+
+    if (arquivo.includes("future-pulse")) {
+
+        nomeMusica =
+            "Future Pulse";
+    }
+
+
+    if (arquivo.includes("neon-dreams")) {
+
+        nomeMusica =
+            "Neon Dreams";
+    }
+
+
+    if (arquivo.includes("human-machine")) {
+
+        nomeMusica =
+            "Human × Machine";
+    }
+
+
+    /* -----------------------------------------------------
+       CAPA
+    ----------------------------------------------------- */
+
+    let capaMusica =
+        "covers/future-pulse.jpg";
+
+
+    if (arquivo.includes("neon-dreams")) {
+
+        capaMusica =
+            "covers/neon-dreams.jpg";
+    }
+
+
+    if (arquivo.includes("human-machine")) {
+
+        capaMusica =
+            "covers/human-machine.jpg";
+    }
+
+
+    /* -----------------------------------------------------
+       ELEMENTO DO PLAYER
+    ----------------------------------------------------- */
+
+    const player =
+        document.createElement("div");
+
+
+    player.className =
+        "audio-player";
+
+
+    player.setAttribute(
+        "role",
+        "region"
+    );
+
+
+    player.setAttribute(
+        "aria-label",
+        "Player de áudio Flow Studio IA"
+    );
+
+
+    /* -----------------------------------------------------
+       HTML
+    ----------------------------------------------------- */
+
+    player.innerHTML = `
+
+        <div class="player-info">
+
+            <div class="player-cover">
+
+                <img
+                    src="${capaMusica}"
+                    alt="Capa de ${nomeMusica}"
+                >
+
+            </div>
+
+            <div class="player-details">
+
+                <strong class="player-title">
+                    ${nomeMusica}
+                </strong>
+
+                <span class="player-status">
+                    FLOW STUDIO IA •
+                    <span class="status-text">
+                        REPRODUZINDO
+                    </span>
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="player-controls">
+
+            <button
+                class="player-play"
+                type="button"
+                aria-label="Pausar música"
+            >
+                ❚❚
+            </button>
+
+        </div>
+
+
+        <div class="player-progress-area">
+
+            <span class="player-current">
+                0:00
+            </span>
+
+            <div
+                class="player-progress"
+                role="slider"
+                tabindex="0"
+                aria-label="Progresso da música"
+                title="Clique para avançar"
+            >
+
+                <div
+                    class="player-progress-bar"
+                ></div>
+
+            </div>
+
+            <span class="player-duration">
+                0:00
+            </span>
+
+        </div>
+
+
+        <div class="player-volume">
+
+            <span aria-hidden="true">
+                🔊
+            </span>
+
+            <input
+                class="player-volume-control"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="1"
+                aria-label="Volume"
+            >
+
+        </div>
+
+
+        <button
+            class="player-close"
+            type="button"
+            aria-label="Fechar player"
+        >
+            ×
+        </button>
+
+    `;
+
+
+    /* -----------------------------------------------------
+       GARANTE POSIÇÃO VISÍVEL
+    ----------------------------------------------------- */
+
+    player.style.position = "fixed";
+    player.style.left = "50%";
+    player.style.bottom = "20px";
+    player.style.zIndex = "999999";
+
+
+    player.style.width =
+        "min(920px, calc(100% - 32px))";
+
+
+    player.style.visibility =
+        "visible";
+
+
+    player.style.opacity =
+        "1";
+
+
+    player.style.pointerEvents =
+        "auto";
+
+
+    player.style.transform =
+        "translateX(-50%)";
+
+
+    player.style.display =
+        "grid";
+
+
+    /* -----------------------------------------------------
+       COLOCA NO BODY
+    ----------------------------------------------------- */
+
+    document.body.appendChild(player);
+
+
+    playerAtual = player;
+
+
+    /* -----------------------------------------------------
+       PLAY / PAUSE
+    ----------------------------------------------------- */
+
+    const playButton =
+        player.querySelector(
+            ".player-play"
+        );
+
+
+    playButton.addEventListener(
+        "click",
+        () => {
+
+            if (!audioAtual) {
+                return;
+            }
+
+
+            if (audioAtual.paused) {
+
+                audioAtual.play()
+                    .catch(() => {
+
+                        mostrarMensagem(
+                            "Não foi possível reproduzir este áudio."
+                        );
+
+                    });
+
+            } else {
+
+                audioAtual.pause();
+
+            }
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       PROGRESSO
+    ----------------------------------------------------- */
+
+    const progressArea =
+        player.querySelector(
+            ".player-progress"
+        );
+
+
+    progressArea.addEventListener(
+        "click",
+        evento => {
+
+            if (
+                !audioAtual ||
+                !audioAtual.duration
+            ) {
+                return;
+            }
+
+
+            const rect =
+                progressArea.getBoundingClientRect();
+
+
+            const posicao =
+                (
+                    evento.clientX -
+                    rect.left
+                ) / rect.width;
+
+
+            const porcentagem =
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        posicao
+                    )
+                );
+
+
+            audioAtual.currentTime =
+                porcentagem *
+                audioAtual.duration;
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       TECLADO
+    ----------------------------------------------------- */
+
+    progressArea.addEventListener(
+        "keydown",
+        evento => {
+
+            if (
+                !audioAtual ||
+                !audioAtual.duration
+            ) {
+                return;
+            }
+
+
+            if (
+                evento.key !==
+                    "ArrowLeft" &&
+                evento.key !==
+                    "ArrowRight"
+            ) {
+                return;
+            }
+
+
+            evento.preventDefault();
+
+
+            const passo = 5;
+
+
+            if (
+                evento.key ===
+                "ArrowRight"
+            ) {
+
+                audioAtual.currentTime =
+                    Math.min(
+                        audioAtual.duration,
+                        audioAtual.currentTime +
+                            passo
+                    );
+
+            } else {
+
+                audioAtual.currentTime =
+                    Math.max(
+                        0,
+                        audioAtual.currentTime -
+                            passo
+                    );
+            }
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       VOLUME
+    ----------------------------------------------------- */
+
+    const volume =
+        player.querySelector(
+            ".player-volume-control"
+        );
+
+
+    volume.addEventListener(
+        "input",
+        () => {
+
+            if (!audioAtual) {
+                return;
+            }
+
+
+            audioAtual.volume =
+                Number(volume.value);
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       FECHAR
+    ----------------------------------------------------- */
+
+    const closeButton =
+        player.querySelector(
+            ".player-close"
+        );
+
+
+    closeButton.addEventListener(
+        "click",
+        () => {
+
+            fecharPlayer();
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       MOSTRA PLAYER
+    ----------------------------------------------------- */
+
+    setTimeout(() => {
+
+        player.classList.add(
+            "player-visible"
+        );
+
+    }, 20);
+}
+
+
+/* =========================================================
+   ESTADO DO PLAYER
+========================================================= */
+
+function atualizarEstadoPlayer(
+    reproduzindo
+) {
+
+    if (!playerAtual) {
+        return;
+    }
+
+
+    const playButton =
+        playerAtual.querySelector(
+            ".player-play"
+        );
+
+
+    const statusText =
+        playerAtual.querySelector(
+            ".status-text"
+        );
+
+
+    if (reproduzindo) {
+
+        if (playButton) {
+
+            playButton.innerHTML =
+                "❚❚";
+
+            playButton.setAttribute(
+                "aria-label",
+                "Pausar música"
+            );
+        }
+
+
+        if (statusText) {
+
+            statusText.textContent =
+                "REPRODUZINDO";
+        }
+
+
+        if (botaoAtual) {
+
+            botaoAtual.innerHTML =
+                "❚❚ Pausar";
+
+            botaoAtual.classList.add(
+                "playing"
+            );
+        }
+
+
+        if (cardAtual) {
+
+            cardAtual.classList.add(
+                "is-playing"
+            );
+        }
+
+    } else {
+
+        if (playButton) {
+
+            playButton.innerHTML =
+                "▶";
+
+            playButton.setAttribute(
+                "aria-label",
+                "Continuar música"
+            );
+        }
+
+
+        if (statusText) {
+
+            statusText.textContent =
+                "PAUSADO";
+        }
+
+
+        if (botaoAtual) {
+
+            botaoAtual.innerHTML =
+                "▶ Continuar";
+
+            botaoAtual.classList.remove(
+                "playing"
+            );
+        }
+
+
+        if (cardAtual) {
+
+            cardAtual.classList.remove(
+                "is-playing"
+            );
+        }
+    }
+}
+
+
+/* =========================================================
+   ATUALIZAR PROGRESSO
+========================================================= */
+
+function atualizarProgresso() {
+
+    if (
+        !audioAtual ||
+        !playerAtual
+    ) {
+        return;
+    }
+
+
+    const barra =
+        playerAtual.querySelector(
+            ".player-progress-bar"
+        );
+
+
+    const atual =
+        playerAtual.querySelector(
+            ".player-current"
+        );
+
+
+    if (
+        barra &&
+        audioAtual.duration &&
+        Number.isFinite(
+            audioAtual.duration
+        )
+    ) {
+
+        const porcentagem =
+            (
+                audioAtual.currentTime /
+                audioAtual.duration
+            ) * 100;
+
+
+        barra.style.width =
+            `${porcentagem}%`;
+    }
+
+
+    if (atual) {
+
+        atual.textContent =
+            formatarTempo(
+                audioAtual.currentTime
+            );
+    }
+}
+
+
+/* =========================================================
+   ATUALIZAR DURAÇÃO
+========================================================= */
+
+function atualizarDuracao() {
+
+    if (
+        !audioAtual ||
+        !playerAtual
+    ) {
+        return;
+    }
+
+
+    const duracao =
+        playerAtual.querySelector(
+            ".player-duration"
+        );
+
+
+    if (duracao) {
+
+        duracao.textContent =
+            formatarTempo(
+                audioAtual.duration
+            );
+    }
+}
+
+
+/* =========================================================
+   FORMATAR TEMPO
+========================================================= */
+
+function formatarTempo(
+    segundos
+) {
+
+    if (
+        !Number.isFinite(
+            segundos
+        ) ||
+        segundos < 0
+    ) {
+
+        return "0:00";
+    }
+
+
+    const minutos =
+        Math.floor(
+            segundos / 60
+        );
+
+
+    const segundosRestantes =
+        Math.floor(
+            segundos % 60
+        );
+
+
+    return (
+        `${minutos}:` +
+        `${segundosRestantes
+            .toString()
+            .padStart(2, "0")}`
+    );
+}
+
+
+/* =========================================================
+   FINALIZAR MÚSICA
+========================================================= */
+
+function finalizarMusica() {
+
+    if (botaoAtual) {
+
+        botaoAtual.innerHTML =
+            "▶ Ouvir projeto";
+
+        botaoAtual.classList.remove(
+            "playing"
+        );
+    }
+
+
+    if (cardAtual) {
+
+        cardAtual.classList.remove(
+            "is-playing"
+        );
+    }
+
+
+    if (playerAtual) {
+
+        const playButton =
+            playerAtual.querySelector(
+                ".player-play"
+            );
+
+
+        const statusText =
+            playerAtual.querySelector(
+                ".status-text"
+            );
+
+
+        if (playButton) {
+
+            playButton.innerHTML =
+                "▶";
+
+            playButton.setAttribute(
+                "aria-label",
+                "Reproduzir novamente"
+            );
+        }
+
+
+        if (statusText) {
+
+            statusText.textContent =
+                "FINALIZADO";
+        }
+
+
+        const barra =
+            playerAtual.querySelector(
+                ".player-progress-bar"
+            );
+
+
+        if (barra) {
+
+            barra.style.width =
+                "100%";
+        }
+    }
+}
+
+
+/* =========================================================
+   FECHAR PLAYER
+========================================================= */
+
+function fecharPlayer() {
+
+    if (audioAtual) {
+
+        audioAtual.pause();
+        audioAtual.currentTime = 0;
+    }
+
+
+    document
+        .querySelectorAll(
+            ".project-card"
+        )
+        .forEach(card => {
+
+            card.classList.remove(
+                "is-playing"
+            );
+
+        });
+
+
+    document
+        .querySelectorAll(
+            ".project-link"
+        )
+        .forEach(botao => {
+
+            botao.classList.remove(
+                "playing"
+            );
+
+            botao.innerHTML =
+                "▶ Ouvir projeto";
+
+        });
+
+
+    if (playerAtual) {
+
+        playerAtual.remove();
+
+        playerAtual = null;
+    }
+
+
+    audioAtual = null;
+    botaoAtual = null;
+    cardAtual = null;
+}
+
+
+/* =========================================================
+   LIMPAR PLAYER
+========================================================= */
+
+function limparPlayer() {
+
+    fecharPlayer();
+}
+
+
+/* =========================================================
+   MENSAGEM
+========================================================= */
+
+function mostrarMensagem(
+    texto
+) {
+
+    const mensagem =
+        document.createElement(
+            "div"
+        );
+
+
+    mensagem.className =
+        "flow-message";
+
+
+    mensagem.textContent =
+        texto;
+
+
+    document.body.appendChild(
+        mensagem
+    );
+
+
+    setTimeout(() => {
+
+        mensagem.classList.add(
+            "show"
+        );
+
+    }, 20);
+
+
+    setTimeout(() => {
+
+        mensagem.classList.remove(
+            "show"
+        );
+
+
+        setTimeout(() => {
+
+            if (mensagem) {
+                mensagem.remove();
+            }
+
+        }, 300);
+
+    }, 3000);
+}
+
+
+/* =========================================================
+   ANIMAÇÃO DAS SEÇÕES
+========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const secoes =
+            document.querySelectorAll(
+                ".section"
+            );
+
+
+        if (
+            !(
+                "IntersectionObserver"
+                in window
+            )
+        ) {
+
+            secoes.forEach(
+                secao => {
+
+                    secao.classList.add(
+                        "section-visible"
+                    );
+
+                }
+            );
+
+            return;
+        }
+
+
+        const observer =
+            new IntersectionObserver(
+                entradas => {
+
+                    entradas.forEach(
+                        entrada => {
+
+                            if (
+                                entrada.isIntersecting
+                            ) {
+
+                                entrada.target.classList.add(
+                                    "section-visible"
+                                );
+
+
+                                observer.unobserve(
+                                    entrada.target
+                                );
+                            }
+
+                        }
+                    );
+
+                },
+                {
+                    threshold: 0.12
+                }
+            );
+
+
+        secoes.forEach(
+            secao => {
+
+                observer.observe(
+                    secao
+                );
+
+            }
+        );
+
+    }
+);

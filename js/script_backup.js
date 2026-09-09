@@ -1,0 +1,1 @@
+JavaScript aí dentro: function mostrarMensagem() alert "Bem-vindoS ao Flow Studio! Em breve você poderá entrar em contato pelo WhatsApp
